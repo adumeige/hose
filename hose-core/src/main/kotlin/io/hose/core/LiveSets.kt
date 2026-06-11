@@ -45,6 +45,13 @@ internal class LiveSets(
     /** Number of live (non-evicted) sets; test/diagnostic surface. */
     val size: Int get() = sets.size
 
+    /** Queries of every live set — the resync sweep re-runs them. */
+    fun activeQueries(): List<StoreQuery> = sets.keys.toList()
+
+    /** (typeName, pk) of every current member — swept on resync even if its handle evicted. */
+    fun memberKeys(): List<Pair<String, Any>> =
+        sets.values.flatMap { entry -> entry.memberKeysSnapshot() }
+
     /**
      * Subscribes to the live set for [query]: a [SetEvent.Snapshot] of current
      * membership first, then deltas, in spine order.
@@ -144,6 +151,10 @@ internal class LiveSets(
                 touchedDuringInit.clear()
                 initializing = false
             }
+        }
+
+        fun memberKeysSnapshot(): List<Pair<String, Any>> = synchronized(lock) {
+            members.map { query.type to it }
         }
 
         fun subscribe(): ReceiveChannel<SetEvent<Any>>? = synchronized(lock) {

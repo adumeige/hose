@@ -22,11 +22,13 @@ import kotlinx.coroutines.launch
  * has never seen is dropped: there is no handle and no set member it could affect.
  */
 internal class FeedBridge(
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val spine: Spine,
     private val identityMap: IdentityMap,
     private val registry: EntityTypeRegistry,
     private val store: ObservableStore,
+    /** Snapshot-on-reconnect: invoked when the adapter signals lost feed continuity. */
+    private val resync: (suspend () -> Unit)? = null,
 ) : FeedListener {
 
     private val bridge = Channel<Mutation>(Channel.UNLIMITED)
@@ -56,6 +58,18 @@ internal class FeedBridge(
             }
         }
         bridge.trySend(Mutation.Delete(type, pk, decodedVersion, Origin.FEED))
+    }
+
+    override fun onResync() {
+        val handler = resync ?: return
+        scope.launch {
+            log.log(System.Logger.Level.INFO, "feed signalled resync; refreshing from store snapshots")
+            try {
+                handler()
+            } catch (t: Throwable) {
+                log.log(System.Logger.Level.ERROR, "resync sweep failed", t)
+            }
+        }
     }
 
     fun stop() {

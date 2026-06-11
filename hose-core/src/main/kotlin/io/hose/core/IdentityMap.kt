@@ -72,6 +72,10 @@ class IdentityMap(
     /** Domain pk previously seen for ([typeName], [encodedKey]), or null if never seen. */
     fun pkFor(typeName: String, encodedKey: String): Any? = keyIndex[typeName to encodedKey]
 
+    /** (token, pk) of every live handle — the resync sweep's working set. */
+    fun liveEntries(): List<Pair<EntityType<Any, Any, Any>, Any>> =
+        entries.map { (key, entry) -> entry.handle.type to key.pk }
+
     private fun entry(type: EntityType<*, *, *>, pk: Any, load: Boolean): Entry {
         val erasedType = type.erased
         val key = EntityKey(type.name, pk)

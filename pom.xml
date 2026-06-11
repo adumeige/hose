@@ -17,6 +17,7 @@
         <module>hose-core</module>
         <module>hose-store-memory</module>
         <module>hose-contract-tests</module>
+        <module>hose-store-surreal</module>
         <module>hose-vaadin-demo</module>
     </modules>
 

@@ -1,5 +1,6 @@
 package io.hose.core
 
+import io.hose.core.IdentityMap.Companion.erasedToken
 import io.hose.core.IdentityMap.Companion.narrowKeys
 import io.hose.store.spi.EntityStore
 import io.hose.store.spi.ObservableStore
@@ -65,7 +66,43 @@ class Hose(
     private val writePath = WritePath(scope, spine, store, config.ioDispatcher, config.spineCapacity)
 
     private val feedBridge: FeedBridge? = (store as? ObservableStore)?.let {
-        FeedBridge(scope, spine, identityMap, registry, it).also(FeedBridge::start)
+        FeedBridge(scope, spine, identityMap, registry, it, resync = { resyncFromStore(store, config) })
+            .also(FeedBridge::start)
+    }
+
+    /**
+     * Snapshot-on-reconnect: the feed lost continuity, so the store is re-read and
+     * every difference re-enters through the spine as FEED mutations — the version
+     * guard absorbs what the runtime already has, routers fix live-set membership,
+     * and total order is preserved. Swept: every live handle, every live-set member
+     * (even if its handle evicted), and every live-set query (for entities the
+     * runtime has never seen).
+     */
+    private suspend fun resyncFromStore(store: EntityStore, config: HoseConfig) {
+        val swept = mutableSetOf<Pair<String, Any>>()
+
+        suspend fun sweep(type: EntityType<*, *, *>, pk: Any) {
+            if (!swept.add(type.name to pk)) return
+            val stored = withContext(config.ioDispatcher) {
+                store.get(type.name, type.erasedToken().encodeKey(pk))
+            }
+            val payload = stored?.payload
+            if (payload != null) {
+                spine.enqueue(Mutation.Upsert(type, payload, Origin.FEED))
+            } else {
+                spine.enqueue(Mutation.Delete(type, pk, null, Origin.FEED))
+            }
+        }
+
+        for ((type, pk) in identityMap.liveEntries()) sweep(type, pk)
+        for ((typeName, pk) in liveSets.memberKeys()) registry[typeName]?.let { sweep(it, pk) }
+        for (query in liveSets.activeQueries()) {
+            val type = registry[query.type] ?: continue
+            val rows = withContext(config.ioDispatcher) { store.query(query) }
+            for (row in rows) {
+                row.payload?.let { spine.enqueue(Mutation.Upsert(type, it, Origin.FEED)) }
+            }
+        }
     }
 
     /** The shared live state of one entity; null while absent (unloaded or deleted). */
