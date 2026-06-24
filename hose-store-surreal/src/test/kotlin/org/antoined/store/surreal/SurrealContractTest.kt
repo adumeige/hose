@@ -27,7 +27,7 @@ object SurrealTestSupport {
             "docker", "run", "-d", "--rm", "-p", "127.0.0.1:0:8000",
             "surrealdb/surrealdb:v2",
             "start", "--user", "root", "--pass", "root", "memory",
-        ).trim()
+        ).lines().last { it.isNotBlank() }.trim()
         Runtime.getRuntime().addShutdownHook(Thread { runCatching { exec("docker", "rm", "-f", containerId) } })
         val mapped = exec("docker", "port", containerId, "8000/tcp")
             .lineSequence().first().substringAfterLast(':').trim().toInt()

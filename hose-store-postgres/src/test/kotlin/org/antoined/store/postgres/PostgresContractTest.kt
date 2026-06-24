@@ -35,7 +35,7 @@ object PostgresTestSupport {
             "docker", "run", "-d", "--rm", "-p", "127.0.0.1:0:5432",
             "-e", "POSTGRES_PASSWORD=hose",
             "postgres:17-alpine",
-        ).trim()
+        ).lines().last { it.isNotBlank() }.trim()
         Runtime.getRuntime().addShutdownHook(Thread { runCatching { exec("docker", "rm", "-f", containerId) } })
         val mapped = exec("docker", "port", containerId, "5432/tcp")
             .lineSequence().first().substringAfterLast(':').trim().toInt()
