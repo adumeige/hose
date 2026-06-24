@@ -216,10 +216,18 @@ abstract class HoseFlowContract {
 
     @Test
     fun `a failing persist reverts the optimistic value, in order`() {
-        val failing = FailingStore(newStore(observable = false))
+        // Seed original directly into the store, bypassing WritePath, so no persist task
+        // is queued for it. If we used upsert() instead, the persister (on Dispatchers.IO)
+        // might not have processed task 1 before failNextUpsert is set, causing it to fail
+        // the wrong task and revert to null instead of original.
+        val raw = newStore(observable = false)
+        val original = entity(1, "original", atSecond = 0)
+        raw.upsert(storedKitEntity(original))
+
+        val failing = FailingStore(raw)
         withHose(failing) {
-            val original = entity(1, "original", atSecond = 0)
-            upsert(kitEntityType, original)
+            // The handle loads from the store asynchronously; wait for it before proceeding.
+            withTimeout(10_000) { entity(kitEntityType, 1L).first { it != null } }
 
             turbineScope {
                 val failures = writeFailures.testIn(this)
