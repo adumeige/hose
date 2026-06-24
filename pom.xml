@@ -4,13 +4,24 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.hose</groupId>
+    <groupId>org.antoined</groupId>
     <artifactId>hose-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>hose</name>
     <description>Reactive entity streaming over pluggable stores</description>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/adumeige/hose</url>
+        </repository>
+        <snapshotRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/adumeige/hose</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <modules>
         <module>hose-store-spi</module>

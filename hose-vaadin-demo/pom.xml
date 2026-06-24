@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.hose</groupId>
+        <groupId>org.antoined</groupId>
         <artifactId>hose-parent</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
@@ -14,6 +14,7 @@
     <description>M1 proof application — Spring-free Vaadin todo over the memory store</description>
 
     <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
         <vaadin.version>24.7.4</vaadin.version>
         <karibu-dsl.version>2.3.2</karibu-dsl.version>
         <karibu-testing.version>2.2.4</karibu-testing.version>
@@ -34,12 +35,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.hose</groupId>
+            <groupId>org.antoined</groupId>
             <artifactId>hose-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.hose</groupId>
+            <groupId>org.antoined</groupId>
             <artifactId>hose-store-memory</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -107,7 +108,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>io.hose.demo.MainKt</mainClass>
+                    <mainClass>org.antoined.demo.MainKt</mainClass>
                     <classpathScope>runtime</classpathScope>
                 </configuration>
             </plugin>
